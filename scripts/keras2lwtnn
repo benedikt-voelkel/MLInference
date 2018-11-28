@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# Check whether environemnt is setup
+[[ "$(env | grep "^NN_CPP_APP_SETUP")" == "" ]] && \
+    { echo "Your environment doesn't seem to be setup. Source bin/setup from \
+            your install directory"; exit 1; }
+
+# Start off with empty architecture and weights files.
+architecture=""
+weights=""
+model_creation_log="$(pwd)/model_creation.log"
+# The model file created at
+model="$(pwd)/model.json"
+
+# Argument names
+# Architecture
+arugment_architecture_short="-a"
+arugment_architecture_long="--architecture"
+# Weights
+arugment_weights_short="-w"
+arugment_weights_long="--weights"
+# Model file name (optional)
+arugment_model_short="-m"
+arugment_model_long="--model"
+# Help
+argument_help_short="-h"
+argument_help_long="--help"
+
+usage() {
+  echo -e "Usage:\n\t keras2lwtnn \n\t\t ${arugment_architecture_short}|${arugment_architecture_long} architecture_file" \
+       "\n\t\t ${arugment_weights_short}|${arugment_weights_long} weights_file" \
+       "\n\t\t [${arugment_model_short}|${arugment_model_short} model_file_name]" \
+       "\n\t\t | [${argument_help_long}|${argument_help_short}]"
+}
+
+# Create the model JSON file needed by LWTNN to reconstruct the NN
+create_lwtnn() {
+  # Don't check existence wince this is only used internally.
+  local architecture=$1
+  local weights=$2
+  # Create a temporary directory for the lwtnn variables file
+  local variables_dir_tmp="/tmp/lwtnn"
+  local variables="$variables_dir_tmp/variables.json"
+
+  mkdir -p "$variables_dir_tmp"
+  # Convert for LWTNN
+  $LWTNN_CONVERTER_DIR/kerasfunc2json $architecture $weights > $variables
+  $LWTNN_CONVERTER_DIR/kerasfunc2json $architecture $weights $variables > $model
+  # Delete temporary directory
+  rm -r $variables_dir_tmp
+}
+
+while [ "$1" != "" ]; do
+    case $1 in
+        $arugment_architecture_short | $arugment_architecture_long )   shift
+                                architecture=$1
+                                ;;
+        $arugment_weights_short | $arugment_weights_long )             shift
+                                weights=$1
+                                ;;
+        $arugment_model_short | $arugment_model_long )             shift
+                                model=$1
+                                ;;
+        $argument_help_short | $argument_help_long )                   usage
+                                exit
+                                ;;
+        * )                     usage
+                                exit 1
+    esac
+    # One additional shift to hsift the value.
+    shift
+done
+
+# If a parameter is missing, exit.
+[[ "$architecture" == "" || "$weights" == "" ]] && { usage; exit 1; }
+
+# Everything seems to be alright
+echo "Create LWTNN model JSON file from architecture file $architecture and " \
+     "weights file $weights"
+create_lwtnn $architecture $weights > $model_creation_log
+
+# Did everything go well?
+[[ "$?" != "0" ]] && { echo "ERROR: Something went wrong, see $model_creation_log"; exit 1; }
+
+# Exit success
+echo "Your model file has been created at $model"
+exit 0

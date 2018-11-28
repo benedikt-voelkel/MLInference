@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Eigen installation
+eigen3_inc_dir=@eigen3_inc_dir@
+# Boost dir
+boost_inc_dir=@boost_inc_dir@
+#boost_lib_dir=@boost_lib_dir@
+# LWTNN dirs
+lwtnn_inc_dir=@lwtnn_inc_dir@
+lwtnn_lib_dir=@lwtnn_lib_dir@
+lwtnn_bin_dir=@lwtnn_bin_dir@
+lwtnn_converter_dir=@lwtnn_converter_dir@
+# ROOT dir
+root_bin_dir=@root_bin_dir@
+# This project's dirs
+mlinference_inc_dir=@mlinference_inc_dir@
+mlinference_lib_dir=@mlinference_lib_dir@
+mlinference_scripts_dir=@mlinference_scripts_dir@
+
+# Extend LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$lwtnn_lib_dir:$mlinference_lib_dir:$LD_LIBRARY_PATH
+export DYLD_LIBRARY_PATH=$lwtnn_lib_dir:$mlinference_lib_dir:$DYLD_LIBRARY_PATH
+# Extend PATH
+export PATH=$PATH:$lwtnn_bin_dir:$mlinference_scripts_dir
+# Export top level dirs to packages (ROOT has already exported everything)
+export EIGEN3_INCLUDE_DIR=$eigen_inc_dir
+export BOOST_INCLUDE_DIR=$boost_inc_dir
+export BOOST_LIBRARY_DIR=$boost_lib_dir
+export LWTNN_INCLUDE_DIR=$lwtnn_inc_dir
+export LWTNN_LIBRARY_DIR=$lwtnn_lib_dir
+export LWTNN_BINARY_DIR=$lwtnn_bin_dir
+export LWTNN_CONVERTER_DIR=$lwtnn_converter_dir
+
+export NN_CPP_APP_SETUP="1"

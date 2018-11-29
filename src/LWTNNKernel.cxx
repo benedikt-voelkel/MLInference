@@ -1,65 +1,34 @@
-#include <iostream>
-
 #include "MLInference/Types.h"
 #include "MLInference/LWTNNKernel.h"
-
-using namespace mlinference::lwtnn;
-
-//------------------------------------------------------------------------------
-// LWTNN Kernel configuration implementation
-//------------------------------------------------------------------------------
-LWTNNKernelConfig::LWTNNKernelConfig(const std::string& modelFilepath,
-                                     const std::unordered_map<std::string, std::string>
-                                     featureVarLWTNNVarMap)
-  : mModelFilepath(modelFilepath),
-    mConfigStream(modelFilepath),
-    mConfig(lwt::parse_json_graph(mConfigStream)),
-    mVariableMap(featureVarLWTNNVarMap)
-{
-
-  // NOTE Only accept one layer of nodes for now
-  if(mConfig.inputs.size() > 1) {
-    std::cerr << "ERROR: Accept only one layer of input nodes.\n";
-    exit(1);
-  }
-  // Replace (some) LWTNN standard variable names with user defined ones
-  if(!mVariableMap.empty()) {
-    for(auto& ic : mConfig.inputs) {
-      // Prepare the input map for this node
-      // Prepare a map wrapper for this node and pass the input map
-      // Loop over all variables for one input node
-      for(auto& variable : ic.variables) {
-        const auto& it = featureVarLWTNNVarMap.find(variable.name);
-        if(it == featureVarLWTNNVarMap.end()) {
-          continue;
-        }
-        variable.name = it->second;
-      }
-    }
-  } // end if mVairableMap.empty
-}
-
-LWTNNKernelConfig::LWTNNKernelConfig(const LWTNNKernelConfig& rhs)
-  : mModelFilepath(rhs.mModelFilepath), mConfigStream(rhs.mModelFilepath),
-    mConfig(rhs.mConfig), mVariableMap(rhs.mVariableMap)
-{}
-
-
-
-//------------------------------------------------------------------------------
-// LWTNN Kernel implementation
-//------------------------------------------------------------------------------
 
 //
 // Standard constructor
 //
-LWTNNKernel::LWTNNKernel(unsigned int id, const LWTNNKernelConfig& config,
-                         Inputs* inputs, Predictions* predictions)
-  : mlinference::base::MLKernel(id, EMLType::kNN, EMLBackend::kLWTNN, inputs, predictions),
-    mConfig(config), mGraph(mConfig.getConfig())
+using namespace mlinference::lwtnn;
+
+MLKernel::MLKernel(unsigned int id, const std::string& modelJSON,
+                   const std::unordered_map<std::string, std::string>& variableMap)
+  : mlinference::base::MLKernel(id, EMLType::kNN, EMLBackend::kLWTNN),
+    mConfig(modelJSON, variableMap), mGraph(mConfig.getConfig()),
+    mInputs(nullptr), mPredictions(nullptr)
 {
   mInputMap.clear();
-  // Prepare input map
+}
+
+MLKernel::MLKernel(unsigned int id, const std::string& modelJSON,
+                   const std::string& variableMapJSON)
+  : mlinference::base::MLKernel(id, EMLType::kNN, EMLBackend::kLWTNN),
+    mConfig(modelJSON, variableMapJSON), mGraph(mConfig.getConfig()),
+    mInputs(nullptr), mPredictions(nullptr)
+{
+  mInputMap.clear();
+}
+
+void MLKernel::initialize(Inputs* inputs, Predictions* predictions)
+{
+  mInputs = inputs;
+  mPredictions = predictions;
+  // Prepare internal input map
   for(auto& ic : mConfig.getConfig().inputs) {
     // Set default value -1
     for(auto& variable : ic.variables) {
@@ -69,15 +38,16 @@ LWTNNKernel::LWTNNKernel(unsigned int id, const LWTNNKernelConfig& config,
   // Prepare the output map the user will see.
   for(auto& oc : mConfig.getConfig().outputs) {
     for(auto& output : oc.second.labels) {
-      predictions->operator[](output) = -1.;
+      mPredictions->operator[](output) = -1.;
     }
   }
 }
 
+
 //
 // Compute predictions and fill output map
 //
-void LWTNNKernel::compute()
+void MLKernel::compute()
 {
   // TODO That's a hack for now!!!
   for(auto& ic : mConfig.getConfig().inputs) {

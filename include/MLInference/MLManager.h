@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include "MLInference/Types.h"
+#include "MLInference/Utilities.h"
 #include "MLInference/MLKernel.h"
 #include "MLInference/LWTNNKernel.h"
 
@@ -26,11 +27,11 @@
 // 4) This is a singleton class to get access to things from anywhere.
 
 
-
-
 namespace mlinference {
 
   namespace base {
+
+    enum class EState {kPreInit, kInit, kPostInit};
 
     class MLManager
     {
@@ -41,35 +42,41 @@ namespace mlinference {
           static MLManager instance;
           return instance;
         }
-        // Delete copy and assignement
+        /// Delete copy and assignement
         MLManager(const MLManager&) = delete;
         MLManager& operator=(const MLManager&) = delete;
 
         ~MLManager();
 
-        /// Create an algorithm by providing a path to a config file and
-        /// additional arguments which will be forwarded to the respective
-        /// kernel construction
-        template <typename... TArg>
-        unsigned int createKernel(EMLBackend backend, TArg&&... Args)
+        /// Create a MLKernel by providing arguments which will be forwarded to
+        /// the respective kernel construction
+        template <typename T, typename... TArg>
+        typename std::enable_if<std::is_base_of<mlinference::base::MLKernel, T>::value, unsigned int>::type
+        createKernel(TArg&&... Args)
         {
-          switch(backend) {
-            case EMLBackend::kLWTNN: mPredictions.push_back(Predictions());
-                                     createLWTNNKernel(std::forward<TArg>(Args)...);
-                                     return mNKernels++;
-                                     break;
-            // Default doesn't make sense but again: testing
-            default: std::cerr << "Default: No ML algorithm created\n";
-                     break;
-          }
-
+          assertState(EState::kInit);
+          mKernels.push_back(new T(mKernels.size(), std::forward<TArg>(Args)...));
+          return mKernels.size() - 1;
         }
 
-        /// Setting all feature names at once
-        void setFeatures(const std::vector<std::string>& featureNames);
+        /// Configure, so far only setting feature names
+        void configure(const std::vector<std::string>& featureNames);
+
+        /// Configure and set feature names extracting them from JSON
+        void configure(const std::string& JSONPath);
+
+        /// Initialize all MLKernels passing input and output container pointers
+        void initialize();
+
+        /// Get feature names, can be useful if they were set from a JSON
+        const std::vector<std::string>& getFeatureNames() const;
+
+        /// Get a reference to inputs to set them directly
+        Inputs& getInputsRef();
+        const Inputs& getInputsRef() const;
 
         /// Compute the predictions
-        void compute(const Inputs& inputs);
+        void compute();
 
         /// Get predictions from all algorithms ordered by ID
         const PredictionsVec& getPredictions() const;
@@ -81,21 +88,13 @@ namespace mlinference {
         /// Private default constructor only used by static method getInstance()
         MLManager() = default;
 
-        /// Creating kernel for different ML backends
-        /// TODO Should this be outsourced or stay with the MLManager?
-        ///      Then could think about allowing for macros creating kernels
-        ///      such that new kernels could be used on the fly.
-        void createLWTNNKernel(const std::string& modelJSON,
-                               const std::unordered_map<std::string, std::string> featureLWTNNMap)
-        {
-          lwtnn::LWTNNKernelConfig config(modelJSON, featureLWTNNMap);
-          mKernels.push_back(new lwtnn::LWTNNKernel(mNKernels, config, &mInputs,
-                                                    &(mPredictions[mNKernels])));
-        }
+        /// Make sure MLManager is in required state.
+        void assertState(EState state) const;
+
+        /// Change the current state
+        void changeState(EState state);
 
       private:
-        /// Number of registered kernels
-        unsigned int mNKernels = 0;
         /// Hold all instanciated ML inferers
         std::vector<MLKernel*> mKernels;
         /// The feature names
@@ -104,6 +103,8 @@ namespace mlinference {
         Inputs mInputs;
         /// Summing up all predictions
         PredictionsVec mPredictions;
+        /// The current state
+        EState mCurrentState = EState::kPreInit;
     };
   } // end namespace base
 

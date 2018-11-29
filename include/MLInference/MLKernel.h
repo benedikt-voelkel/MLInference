@@ -11,10 +11,8 @@ namespace mlinference {
     {
       public:
         /// Standard constructor
-        MLKernel(unsigned int id, EMLType type, EMLBackend backend,
-                 Inputs* inputs, Predictions* predictions)
-          : mId(id), mMLType(type), mBackend(backend), mInputs(inputs),
-            mPredictions(predictions)
+        MLKernel(unsigned int id, EMLType type, EMLBackend backend)
+          : mId(id), mMLType(type), mMLBackend(backend)
         {}
         /// Delete default constructor since id and type are required
         MLKernel() = delete;
@@ -30,26 +28,22 @@ namespace mlinference {
         /// Get the type
         EMLType getType() const { return mMLType; }
         /// Get the used backend
-        EMLBackend getBackend() const { return mBackend; }
+        EMLBackend getBackend() const { return mMLBackend; }
+
+        /// When initializing input and prediction pointers are passed
+        virtual void initialize(Inputs* inputs, Predictions* predictions) = 0;
 
         /// Get inputs and write to provided output.
         virtual void compute() = 0;
 
-      protected:
-        /// Pointer to inputs to compute predictions from
-        Inputs* mInputs;
-        /// Pointer to prediction map
-        Predictions* mPredictions;
 
       private:
         /// Unique identification
         unsigned int mId;
-        /// The type of the algorithm
+        /// MLKernel type
         EMLType mMLType;
         /// Kernel computing the predictions form the inputs
-        EMLBackend mBackend;
-
-
+        EMLBackend mMLBackend;
 
     };
   }

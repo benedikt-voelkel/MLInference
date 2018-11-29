@@ -20,60 +20,40 @@
 /// having a common frontend.
 
 #include "MLInference/MLKernel.h"
+#include "MLInference/LWTNNConfig.h"
 
 namespace mlinference {
 
   namespace lwtnn {
 
-    /// Storing the configuration fro LWTNN
-    class LWTNNKernelConfig
+    class MLKernel : public mlinference::base::MLKernel
     {
       public:
-        LWTNNKernelConfig(const std::string& modelFilepath,
-                          const std::unordered_map<std::string, std::string>
-                          featureVarLWTNNVarMap);
+        MLKernel(unsigned int id, const std::string& modelJSON,
+                 const std::unordered_map<std::string, std::string>& variableMap);
 
+        MLKernel(unsigned int id, const std::string& modelJSON,
+                 const std::string& variableMapJSON);
 
-        LWTNNKernelConfig(const LWTNNKernelConfig& rhs);
-        LWTNNKernelConfig() = delete;
-        ~LWTNNKernelConfig() = default;
+        MLKernel(const MLKernel&) = delete;
+        MLKernel& operator=(const MLKernel&) = delete;
 
-        const lwt::GraphConfig& getConfig() const
-        {
-          return mConfig;
-        }
+        ~MLKernel() = default;
 
-      private:
-        /// Filepath
-        std::string mModelFilepath;
-        /// The config file stream
-        std::ifstream mConfigStream;
-        /// Parsed config
-        lwt::GraphConfig mConfig;
-        /// Feature variable name to LWTNN variable names map
-        std::unordered_map<std::string, std::string> mVariableMap;
-    };
-
-    class LWTNNKernel : public mlinference::base::MLKernel
-    {
-      public:
-        LWTNNKernel(unsigned int id, const LWTNNKernelConfig& config,
-                    Inputs* inputs, Predictions* predictions);
-
-        LWTNNKernel(const LWTNNKernel&) = delete;
-        LWTNNKernel& operator=(const LWTNNKernel&) = delete;
-
-        ~LWTNNKernel() = default;
-
+        void initialize(Inputs* inputs, Predictions* predictions) override final;
         void compute() override final;
 
       private:
         /// Stored config
-        LWTNNKernelConfig mConfig;
+        KernelConfig mConfig;
         /// The LWTNN graph doing the computation.
         lwt::LightweightGraph mGraph;
         /// The input map.
         std::map<std::string,std::map<std::string,double>> mInputMap;
+        /// Pointer to global inputs
+        Inputs* mInputs;
+        /// Pointer to global predictions
+        Predictions* mPredictions;
 
     };
   } // end namespace lwtnn

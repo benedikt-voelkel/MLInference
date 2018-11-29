@@ -19,66 +19,70 @@ make install
 Set `BOOST_ROOT` in case you have `Boost` installed to a custom path. Although you could try an in-source build (not tested) this is not recommended (especially to not mess up the source directory). So let's suggest you have it installed to `$INSTALL_DIR` in the following where after installation there are libraries and headers.
 
 ## Usage
-The core is the `MLManager` which is used to create new ML algorithms based on configuration files. To use this for LWTNN, do
+As this package deals with inference of a trained ML algorithm, there is no training involved at all. The interface between the training and this package is a configuration file providing the architecture and the parameter values of the trained algorithm.
+
+### Keras via LWTNN
+After training a NN in Keras, the architecture needs to be saved in [JSON format](https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model) (see "Saving/loading only a model's architecture") and the weights must be dumped in HDF5 format [HDF5 format](https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model) (see "Saving/loading only a model's weights"). Important: LWTNN is guaranteed to work with [Keras functional models](https://keras.io/getting-started/functional-api-guide/) so either start with that or convert it to a functional model after training via
+```python
+func_model = seq_model.model
+```
+ Finally, the architecture and weights need to be combined in one JSON file using
+ ```bash
+ $INSTALL_DIR/scripts/keras2lwtnn -a <arch.json> -w <weights.h5> [-m <saved_model.json>]
+ ```
+ The default for the saved model is `model.json`.
+
+### Loading the model
+The core is the `MLManager` which is used to create ML kernels providing a unified interface to talk to them at the same time. A basic implementation could look like the following:
 ```c++
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <iostream>
+
 #include "MLInference/Types.h"
 #include "MLInference/MLManager.h"
 //...
-
-mlinference::base::MLManager& mgr = mlinference::base::MLManager::getInstance();
-mgr.createKernel(mlinference::EMLBackend::kLWTNN, modelJsonFilepath, featureNamesToLWTNN)
-
-```
-
-
-### Preparing the input
-The following things are required:
-* input `JSON` file specifying some information on the input `ROOT` file and tree:
-```json
+int main(int argc, char* argv[])
 {
-  "treename": "some_treename",
-  "filepath": "some_file.root",
-  "copyBranches": ["branch_to_copy_1", "branch_to_copy_2", "branch_to_copy_N" ],
-  "branchMap": {
-    "variable_0": "feature_branch_name_1",
-    "variable_1": "feature_branch_name_2",
-    "variable_2": "feature_branch_name_3",
-    "variable_3": "feature_branch_name_4",
-    "variable_4": "feature_branch_name_5",
-    "variable_5": "feature_branch_name_6",
-    "variable_6": "feature_branch_name_7",
-    "variable_7": "feature_branch_name_8",
-    "variable_N": "feature_branch_name_9"
+  //...
+  // Get reference to the global manager
+  mlinference::base::MLManager& mgr = mlinference::base::MLManager::getInstance();
+  const std::vector<std::string> featureNames = {"feature_1", "feature_2", "feature_N"};
+  // configure it
+  mgr.configure(featureNames);
+  // For LWTNN we need some mapping of internally used feature names "variable_i" to global common feature names (can be ommitted)
+  const std::unordered_map<std::string, std::string> featureNamesToLWTNNMap = { {"variable_0": "feature_1"}, {"variable_1": "feature_2"}, {"variable_N-1", "feature_N"} };
+  // Add a kernel (so far only LWTNN is available)
+  unsigned int kernelID = mgr.createKernel<mlinference::lwtnn::MLKernel>(modelJsonFilepath, featureNamesToLWTNNMap);
+  // Initialize the MLManager will lock such that no more MLKernels can be added
+  mgr.initialize();
+  // Connect to inputs via reference
+  mlinference::Inputs& inputs = mgr.getInputsRef();
+
+  //
+  // In the following you would loop over your samples deriving a prediction for each one
+  //
+
+  // Set features
+  inputs["feature_1"] = 5.;
+  //...
+  inputs["feature_N"] = 42.;
+  // compute predictions
+  mgr.compute();
+  // get the predictions
+  const Predictions& predictions = mgr.getPredictions(kernelID);
+  // do whatever
+  for(const auto& p : predictions) {
+    std::cout << "Prediction " << p.first << " is " << p.second << "\n";
   }
+
+  //
+  // End looping over samples
+  //
+
+  //...
+
+  return 0;
 }
 ```
-The treename and filename are obvious. It is also possible to copy some branches to the target tree if needed by specifying the the list at `copyBranches`. If `branchMap` is not specified, the branch names will be assumed to be `variable_i`.
-
-* output `JSON` file specifying some information on the output `ROOT` file and tree
-```json
-{
-  "treename": "some_treename",
-  "filepath": "some_file.root",
-  "branchMap": {
-    "out_0": "prediction_branch_name_1",
-    "out_1": "prediction_branch_name_2",
-    "out_2": "prediction_branch_name_3",
-    "out_N": "prediction_branch_name_N"
-  }
-}
-```
-Here the structure is analoguous to the input `JSON`.
-
-* model `JSON` file containing the converted `keras` model which can be digested by `LWTNN`
-In order to get this you need the NN's architecture as well as the weights. The former one needs to be available in `JSON` format whereas the second one must be in `HDF5`. Both can be written out after training in `keras` easily, see [here](https://keras.io/getting-started/faq/). Also, please use `Keras`' [functional API](https://keras.io/getting-started/functional-api-guide/) when training or convert the output files accordingly. Assuming the architecture and weights files are present, conversion is done via
-```bash
-keras2lwtnn -a <architecture_file> -a <weights_file> [-m <model_file>]
-```
-Via the last parameter the full path of the created model file can be specified. The default is `$(pwd)/model.json`.
-
-### Running
-After input preparation run
-```bash
-applyNN <model_file> <input_json> <output_json>
-```
-This should give you a `ROOT` file with desired predictions.

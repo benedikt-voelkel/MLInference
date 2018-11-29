@@ -69,6 +69,7 @@ SET(LIBRARY_NAME ${MODULE_NAME})
 # Required source files to build the library.
 SET(LIB_SOURCES
     ${CXX_SOURCE_DIR}/LWTNNKernel.cxx
+    ${CXX_SOURCE_DIR}/LWTNNConfig.cxx
     ${CXX_SOURCE_DIR}/MLManager.cxx
    )
 
@@ -79,8 +80,10 @@ SET(LIB_SOURCES
 set(HEADERS
    ${CXX_INCLUDE_DIR}/${MODULE_NAME}/MLKernel.h
    ${CXX_INCLUDE_DIR}/${MODULE_NAME}/LWTNNKernel.h
+   ${CXX_INCLUDE_DIR}/${MODULE_NAME}/LWTNNConfig.h
    ${CXX_INCLUDE_DIR}/${MODULE_NAME}/MLManager.h
    ${CXX_INCLUDE_DIR}/${MODULE_NAME}/Types.h
+   ${CXX_INCLUDE_DIR}/${MODULE_NAME}/Utilities.h
   )
 
 # The conversion script to produce LWTNN JSON model file from keras architecture

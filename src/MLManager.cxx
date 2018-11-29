@@ -18,15 +18,14 @@ void MLManager::setFeatures(const std::vector<std::string>& featureNames)
   mFeatureNames = featureNames;
 }
 
-void MLManager::setInputs(const std::unordered_map<std::string, double>& inputMap)
-{
-  mInputs = inputMap;
-}
 
-void MLManager::compute()
+void MLManager::compute(const Inputs& inputs)
 {
-  for(unsigned int i = 0; i < mKernels.size(); i++) {
-    mKernels[i]->compute(mInputs, mPredictions[i]);
+  for(const auto& in : inputs) {
+    mInputs[in.first] = in.second;
+  }
+  for(auto& k : mKernels) {
+    k->compute();
   }
 }
 
@@ -34,4 +33,9 @@ const std::vector<std::unordered_map<std::string, double>>&
 MLManager::getPredictions() const
 {
   return mPredictions;
+}
+
+unsigned int MLManager::nKernels() const
+{
+  return mNKernels;
 }

@@ -54,19 +54,18 @@ namespace mlinference {
         std::unordered_map<std::string, std::string> mVariableMap;
     };
 
-
     class LWTNNKernel : public mlinference::base::MLKernel
     {
       public:
-        LWTNNKernel(unsigned int id, const LWTNNKernelConfig& config);
+        LWTNNKernel(unsigned int id, const LWTNNKernelConfig& config,
+                    Inputs* inputs, Predictions* predictions);
 
         LWTNNKernel(const LWTNNKernel&) = delete;
         LWTNNKernel& operator=(const LWTNNKernel&) = delete;
 
         ~LWTNNKernel() = default;
 
-        void compute(const std::unordered_map<std::string, double>& inputs,
-                     std::unordered_map<std::string, double>& outputs) override final;
+        void compute() override final;
 
       private:
         /// Stored config

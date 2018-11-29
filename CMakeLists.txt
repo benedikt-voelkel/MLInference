@@ -57,7 +57,7 @@ SET(CONFIG_SOURCE_DIR ${CMAKE_SOURCE_DIR}/config)
 # Install paths
 SET(INSTALL_BINARY_DIR ${CMAKE_INSTALL_PREFIX}/bin)
 SET(INSTALL_LIBRARY_DIR ${CMAKE_INSTALL_PREFIX}/lib)
-SET(INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/include)
+SET(INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/include/${MODULE_NAME})
 SET(INSTALL_SCRIPTS_DIR ${CMAKE_INSTALL_PREFIX}/scripts)
 SET(INSTALL_CONFIG_DIR ${CMAKE_INSTALL_PREFIX}/config)
 
@@ -72,12 +72,15 @@ SET(LIB_SOURCES
     ${CXX_SOURCE_DIR}/MLManager.cxx
    )
 
+
+
+
 # Requried headers to build the library.
 set(HEADERS
    ${CXX_INCLUDE_DIR}/${MODULE_NAME}/MLKernel.h
    ${CXX_INCLUDE_DIR}/${MODULE_NAME}/LWTNNKernel.h
    ${CXX_INCLUDE_DIR}/${MODULE_NAME}/MLManager.h
-
+   ${CXX_INCLUDE_DIR}/${MODULE_NAME}/Types.h
   )
 
 # The conversion script to produce LWTNN JSON model file from keras architecture

@@ -53,8 +53,9 @@ LWTNNKernelConfig::LWTNNKernelConfig(const LWTNNKernelConfig& rhs)
 //
 // Standard constructor
 //
-LWTNNKernel::LWTNNKernel(unsigned int id, const LWTNNKernelConfig& config)
-  : mlinference::base::MLKernel(id, EMLType::kNN, EMLBackend::kLWTNN),
+LWTNNKernel::LWTNNKernel(unsigned int id, const LWTNNKernelConfig& config,
+                         Inputs* inputs, Predictions* predictions)
+  : mlinference::base::MLKernel(id, EMLType::kNN, EMLBackend::kLWTNN, inputs, predictions),
     mConfig(config), mGraph(mConfig.getConfig())
 {
   mInputMap.clear();
@@ -65,21 +66,26 @@ LWTNNKernel::LWTNNKernel(unsigned int id, const LWTNNKernelConfig& config)
       mInputMap[ic.name][variable.name] = -1.;
     }
   }
+  // Prepare the output map the user will see.
+  for(auto& oc : mConfig.getConfig().outputs) {
+    for(auto& output : oc.second.labels) {
+      predictions->operator[](output) = -1.;
+    }
+  }
 }
 
 //
 // Compute predictions and fill output map
 //
-void LWTNNKernel::compute(const std::unordered_map<std::string, double>& inputs,
-             std::unordered_map<std::string, double>& outputs)
+void LWTNNKernel::compute()
 {
   // TODO That's a hack for now!!!
   for(auto& ic : mConfig.getConfig().inputs) {
-    for(const auto& in : inputs) {
+    for(const auto& in : *mInputs) {
       mInputMap[ic.name][in.first] = in.second;
     }
   }
   for(const auto& tmpOut : mGraph.compute(mInputMap)) {
-    outputs[tmpOut.first] = tmpOut.second;
+    mPredictions->operator[](tmpOut.first) = tmpOut.second;
   }
 }

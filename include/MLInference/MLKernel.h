@@ -11,8 +11,10 @@ namespace mlinference {
     {
       public:
         /// Standard constructor
-        MLKernel(unsigned int id, EMLType type, EMLBackend backend)
-          : mId(id), mMLType(type), mBackend(backend)
+        MLKernel(unsigned int id, EMLType type, EMLBackend backend,
+                 Inputs* inputs, Predictions* predictions)
+          : mId(id), mMLType(type), mBackend(backend), mInputs(inputs),
+            mPredictions(predictions)
         {}
         /// Delete default constructor since id and type are required
         MLKernel() = delete;
@@ -23,9 +25,21 @@ namespace mlinference {
         /// Virtual destructor since it's an abstract base class
         virtual ~MLKernel() = default;
 
+        /// Get the unique ID of this MLKernel
+        unsigned int getId() const { return mId; }
+        /// Get the type
+        EMLType getType() const { return mMLType; }
+        /// Get the used backend
+        EMLBackend getBackend() const { return mBackend; }
+
         /// Get inputs and write to provided output.
-        virtual void compute(const std::unordered_map<std::string, double>& inputs,
-                             std::unordered_map<std::string, double>& outputs) = 0;
+        virtual void compute() = 0;
+
+      protected:
+        /// Pointer to inputs to compute predictions from
+        Inputs* mInputs;
+        /// Pointer to prediction map
+        Predictions* mPredictions;
 
       private:
         /// Unique identification

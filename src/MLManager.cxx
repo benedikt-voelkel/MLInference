@@ -43,8 +43,18 @@ void MLManager::initialize()
 
   // One prediction container for each MLKernel and initialize
   mPredictions.resize(mKernels.size(), Predictions());
+  // One decision container for each MLKernel and initialize together with
+  // a decision container
+  mWorkingPoints.resize(mKernels.size(), Predictions());
+  mDecisions.resize(mKernels.size(), Predictions());
   for(int i = 0; i < mKernels.size(); i++) {
     mKernels[i]->initialize(&mInputs, &(mPredictions[i]));
+    // Initialize decision map for this MLKernel
+    for(auto& p : mPredictions[i]) {
+      // Default WP is 0.5. User needs/can specify values later via getting
+      mWorkingPoints[i][p.first] = 0.5;
+      mDecisions[i][p.first] = 0.;
+    }
   }
   changeState(EState::kPostInit);
 }
@@ -54,14 +64,24 @@ const std::vector<std::string>& MLManager::getFeatureNames() const
   return mFeatureNames;
 }
 
-Inputs& MLManager::getInputsRef()
+Inputs& MLManager::getInputs()
 {
   return mInputs;
 }
 
-const Inputs& MLManager::getInputsRef() const
+const Inputs& MLManager::getInputs() const
 {
   return mInputs;
+}
+
+Predictions& MLManager::getWorkingPoints(unsigned int kernelID)
+{
+  return mWorkingPoints;
+}
+
+const Predictions& MLManager::getWorkingPoints(unsigned int kernelID) const
+{
+  return mWorkingPoints;
 }
 
 void MLManager::compute()
@@ -74,6 +94,19 @@ void MLManager::compute()
 const PredictionsVec& MLManager::getPredictions() const
 {
   return mPredictions;
+}
+
+const PredictionsVec& MLManager::getDecisions()
+{
+  // Decisions are not computed on the fly together with the predictions but
+  // only on request.
+  for(unsigned int i = 0; i < mPredictions.size(); i++) {
+    for(const auto& p : mPredictions[i]) {
+      // Return 1. if prediction is >= working point and 0. otherwise
+      mDecisions[i][p.first] = p.second >= mWorkingPoints[i][p.first] ? 1. : 0.;
+    }
+  }
+  return mDecisions;
 }
 
 unsigned int MLManager::nKernels() const

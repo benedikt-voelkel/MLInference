@@ -3,25 +3,36 @@
 //
 // Standard constructor
 //
-using namespace mlinference::lwtnn;
+using namespace mlinference::xgboost;
 
-MLKernel::MLKernel(unsigned int id, const std::string& modelJSON,
+MLKernel::MLKernel(unsigned int id, const std::string& modelLibPath,
                    const std::unordered_map<std::string, std::string>& variableMap)
-  : mlinference::base::MLKernel(id, EMLType::kNN, EMLBackend::kLWTNN),
-    mConfig(modelJSON, variableMap), mGraph(mConfig.getConfig()),
+  : mlinference::base::MLKernel(id, EMLType::kNN, EMLBackend::kXGBOOST),
+    mModelLibPath(modelLibPath),
     mInputs(nullptr), mPredictions(nullptr)
 {
-  mInputMap.clear();
+  load();
 }
 
-MLKernel::MLKernel(unsigned int id, const std::string& modelJSON,
+MLKernel::MLKernel(unsigned int id, const std::string& modelLibPath,
                    const std::string& variableMapJSON)
-  : mlinference::base::MLKernel(id, EMLType::kNN, EMLBackend::kLWTNN),
-    mConfig(modelJSON, variableMapJSON), mGraph(mConfig.getConfig()),
+  : mlinference::base::MLKernel(id, EMLType::kNN, EMLBackend::kXGBOOST),
+    mModelLibPath(modelLibPath),
     mInputs(nullptr), mPredictions(nullptr)
 {
-  mInputMap.clear();
+  load();
 }
+
+MLKernel::load()
+{
+  if(TreeliteLoadXGBoostModel(mModelLibPath.c_str(), &mModel) < 0) {
+    std::cerr << "Model loading from " << mModelLibPath << " failed.\n";
+    exit(1);
+  }
+}
+
+
+
 
 void MLKernel::initialize(Inputs* inputs, Predictions* predictions)
 {

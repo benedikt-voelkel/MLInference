@@ -72,14 +72,26 @@ namespace mlinference {
         const std::vector<std::string>& getFeatureNames() const;
 
         /// Get a reference to inputs to set them directly
-        Inputs& getInputsRef();
-        const Inputs& getInputsRef() const;
+        Inputs& getInputs();
+        /// Get a reference to inputs read only
+        const Inputs& getInputs() const;
+
+        /// Get reference to woking points to set them
+        Predictions& getWorkingPoints(unsigned int kernelID);
+        /// Get reference to woking points read only
+        const Predictions& getWorkingPoints(unsigned int kernelID) const;
 
         /// Compute the predictions
         void compute();
 
         /// Get predictions from all algorithms ordered by ID
         const PredictionsVec& getPredictions() const;
+
+        /// Get the decision based on user defined working points
+        /// 0: prediction < WP
+        /// 1: prediction >= WP
+        /// Default WP = 0.5
+        const PredictionsVec& getDecisions();
 
         /// Get number of kernels
         unsigned int nKernels() const;
@@ -103,6 +115,10 @@ namespace mlinference {
         Inputs mInputs;
         /// Summing up all predictions
         PredictionsVec mPredictions;
+        /// Working points for all output neurons of all MLKernels
+        PredictionsVec mWorkingPoints;
+        /// Decisions made based on predictions of working points
+        PredictionsVec mDecisions;
         /// The current state
         EState mCurrentState = EState::kPreInit;
     };

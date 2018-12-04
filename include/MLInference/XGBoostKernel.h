@@ -1,34 +1,33 @@
-#ifndef LWTNN_KERNEL_H_
-#define LWTNN_KERNEL_H_
-
-#include <map>
-#include <string>
-
-// Include several headers. See the files for more documentation.
-// First include the class that does the computation
-#include "lwtnn/LightweightGraph.hh"
-// Then include the json parsing functions
-#include "lwtnn/parse_json.hh"
+#ifndef XGBOOST_KERNEL_H_
+#define XGBOOST_KERNEL_H_
 
 /// Example implementation for LWTNN wrapper.
 /// Generalize this such that different ML algorithms/backends can be used
 /// having a common frontend.
 
+/// NOTE
+/// In principlde all XGBoost, LightGBM and SciKit models could be handled
+/// by one class. However, split which makes it simpler if there will be another
+/// (meaning better) interface for one of them in the future.
+
 #include "MLInference/Types.h"
 #include "MLInference/MLKernel.h"
-#include "MLInference/LWTNNConfig.h"
+
+class ModelHandle;
+class CompilerHandle;
+class PredictorHandle;
 
 namespace mlinference {
 
-  namespace lwtnn {
+  namespace xgboost {
 
     class MLKernel : public mlinference::base::MLKernel
     {
       public:
-        MLKernel(unsigned int id, const std::string& modelJSON,
+        MLKernel(unsigned int id, const std::string& modelLibPath,
                  const std::unordered_map<std::string, std::string>& variableMap);
 
-        MLKernel(unsigned int id, const std::string& modelJSON,
+        MLKernel(unsigned int id, const std::string& modelLibPath,
                  const std::string& variableMapJSON);
 
         MLKernel(const MLKernel&) = delete;
@@ -40,12 +39,14 @@ namespace mlinference {
         void compute() override final;
 
       private:
-        /// Stored config
-        KernelConfig mConfig;
-        /// The LWTNN graph doing the computation.
-        lwt::LightweightGraph mGraph;
-        /// The input map.
-        std::map<std::string,std::map<std::string,double>> mInputMap;
+        /// Load everything from the library and build the model
+        void load();
+
+      private:
+        /// Full path to model file
+        std::string mModelLibPath;
+        /// Model handle of treelite
+        ModelHandle mModel;
         /// Pointer to global inputs
         Inputs* mInputs;
         /// Pointer to global predictions
@@ -55,4 +56,4 @@ namespace mlinference {
   } // end namespace lwtnn
 } // end namespace mlinference
 
-#endif /* LWTNN_KERNEL_H_ */
+#endif /* XGBOOST_KERNEL_H_ */

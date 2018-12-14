@@ -8,9 +8,8 @@
 #include <iostream>
 
 #include "MLInference/Types.h"
-#include "MLInference/Utilities.h"
 #include "MLInference/MLKernel.h"
-#include "MLInference/LWTNNKernel.h"
+#include "MLInference/Utilities.h"
 
 // This class manages instanciation of ML algorithms as well as centralised
 // application
@@ -77,9 +76,9 @@ namespace mlinference {
         const Inputs& getInputs() const;
 
         /// Get reference to woking points to set them
-        Predictions& getWorkingPoints(unsigned int kernelID);
+        PredictionsVec& getWorkingPoints();
         /// Get reference to woking points read only
-        const Predictions& getWorkingPoints(unsigned int kernelID) const;
+        const PredictionsVec& getWorkingPoints() const;
 
         /// Compute the predictions
         void compute();

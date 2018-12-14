@@ -74,12 +74,12 @@ const Inputs& MLManager::getInputs() const
   return mInputs;
 }
 
-Predictions& MLManager::getWorkingPoints(unsigned int kernelID)
+PredictionsVec& MLManager::getWorkingPoints()
 {
   return mWorkingPoints;
 }
 
-const Predictions& MLManager::getWorkingPoints(unsigned int kernelID) const
+const PredictionsVec& MLManager::getWorkingPoints() const
 {
   return mWorkingPoints;
 }

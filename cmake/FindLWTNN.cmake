@@ -1,14 +1,16 @@
 # Find LWTNN
 
+set(LWTNN_FOUND FALSE)
 if(NOT LWTNN_DIR)
-  message(FATAL_ERROR "Please specify -DLWTNN_DIR pointing to the top of the
-                       install tree.")
+  message(STATUS "LWTNN cannot be found. Specify -DLWTNN_DIR pointing to the top
+                  of the install tree.")
+  return()
 endif()
 
 set(LIBRARY_NAME lwtnn)
 
 find_path(LWTNN_INCLUDE_DIR
-          NAMES lwtnn/Graph.hh
+          NAMES ${LIBRARY_NAME}/Graph.hh
           PATHS ${LWTNN_DIR}/include
 )
 find_path(LWTNN_LIBRARY_DIR

@@ -13,9 +13,7 @@
 #include "MLInference/Types.h"
 #include "MLInference/MLKernel.h"
 
-class ModelHandle;
-class CompilerHandle;
-class PredictorHandle;
+#include "xgboost/c_api.h"
 
 namespace mlinference {
 
@@ -24,10 +22,10 @@ namespace mlinference {
     class MLKernel : public mlinference::base::MLKernel
     {
       public:
-        MLKernel(unsigned int id, const std::string& modelLibPath,
+        MLKernel(unsigned int id, const std::string& modelPath,
                  const std::unordered_map<std::string, std::string>& variableMap);
 
-        MLKernel(unsigned int id, const std::string& modelLibPath,
+        MLKernel(unsigned int id, const std::string& modelPath,
                  const std::string& variableMapJSON);
 
         MLKernel(const MLKernel&) = delete;
@@ -44,13 +42,15 @@ namespace mlinference {
 
       private:
         /// Full path to model file
-        std::string mModelLibPath;
+        std::string mmodelPath;
         /// Model handle of treelite
         ModelHandle mModel;
         /// Pointer to global inputs
         Inputs* mInputs;
         /// Pointer to global predictions
         Predictions* mPredictions;
+        /// The handle to load a model to
+        BoosterHandle mHandle;
 
     };
   } // end namespace lwtnn

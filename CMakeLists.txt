@@ -49,7 +49,9 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -O2 -g")
 ################################################################################
 # Base sources and headers
 ################################################################################
-set(LIB_SOURCES
+# HEADERS and LIBS sum everything required for building.
+# NOTE So far everything is compiled into one lib.
+set(SRCS
     ${CXX_SOURCE_DIR}/MLManager.cxx
 )
 set(HEADERS
@@ -61,73 +63,27 @@ set(HEADERS
 
 
 ################################################################################
+# Used for any additional directories and libraries to be included and used
+# for built
+################################################################################
+set(INCLUDES)
+set(LIBS)
+set(SCRIPTS)
+
+
+################################################################################
 # Check for backends
 ################################################################################
+include(DeployBackends)
 
-if(WITH_LWTNN)
-
-  #########
-  # Boost #
-  #########
-  find_package(Boost REQUIRED)
-  include_directories(${Boost_INCLUDE_DIR})
-  set(LIBS ${LIBS} ${Boost_LIBRARIES})
-
-  # For setup config script
-  #set(boost_lib_dir ${Boost_LIBRARY_DIR})
-  set(boost_inc_dir ${Boost_INCLUDE_DIR})
-
-  #########
-  # Eigen #
-  #########
-  find_package(Eigen REQUIRED)
-  include_directories(${EIGEN3_INCLUDE_DIR})
-
-  # For setup config script
-  set(eigen3_inc_dir ${EIGEN3_INCLUDE_DIR})
-
-  #########
-  # LWTNN #
-  #########
-  find_package(LWTNN REQUIRED)
-  include_directories(${LWTNN_INCLUDE_DIR})
-
-  set(LIB_SOURCES ${LIB_SOURCES}
-      ${CXX_SOURCE_DIR}/LWTNNKernel.cxx
-      ${CXX_SOURCE_DIR}/LWTNNConfig.cxx
-  )
-
-  set(HEADERS ${HEADERS}
-     ${CXX_INCLUDE_DIR}/${MODULE_NAME}/LWTNNKernel.h
-     ${CXX_INCLUDE_DIR}/${MODULE_NAME}/LWTNNConfig.h
-  )
-  set(LIBS ${LIBS} ${LWTNN_LIBRARIES})
-
-  set(SCRIPTS ${SCRIPTS}
-      ${SCRIPTS_SOURCE_DIR}/keras2lwtnn
-  )
-
-  # For setup config script
-  set(lwtnn_lib_dir ${LWTNN_LIBRARY_DIR})
-  set(lwtnn_inc_dir ${LWTNN_INCLUDE_DIR})
-  set(lwtnn_bin_dir ${LWTNN_BIN_DIR})
-  set(lwtnn_converter_dir ${LWTNN_CONVERTER_DIR})
-
-endif(WITH_LWTNN)
-
-if(WITH_XGBoost)
-
-
-
-endif(WITH_XGBoost)
 
 ################################################################################
 # Setup for library built and installation
 ################################################################################
 
-include_directories(${CXX_INCLUDE_DIR})
+include_directories(${CXX_INCLUDE_DIR} ${INCLUDES})
 set(LIBRARY_NAME ${MODULE_NAME})
-add_library(${LIBRARY_NAME} SHARED ${LIB_SOURCES})
+add_library(${LIBRARY_NAME} SHARED ${SRCS})
 target_link_libraries(${LIBRARY_NAME} ${LIBS})
 
 
@@ -137,11 +93,8 @@ target_link_libraries(${LIBRARY_NAME} ${LIBS})
 # This project
 set(SETUP_SCRIPT_IN ${CONFIG_SOURCE_DIR}/setup.in)
 set(SETUP_SCRIPT_OUT ${CMAKE_BINARY_DIR}/setup)
+include(BuildSetup)
 
-set(mlinference_inc_dir ${INSTALL_INCLUDE_DIR})
-set(mlinference_lib_dir ${INSTALL_LIBRARY_DIR})
-set(mlinference_scripts_dir ${INSTALL_SCRIPTS_DIR})
-configure_file(${SETUP_SCRIPT_IN} ${SETUP_SCRIPT_OUT})
 
 
 ################################################################################

@@ -34,25 +34,45 @@ if(Boost_FOUND AND Eigen_FOUND)
     # Build the conversion script
     set(SCRIPTS ${SCRIPTS} ${SCRIPTS_SOURCE_DIR}/keras2lwtnn)
 
+    # Add library paths to setup
+    list(APPEND _configure_shared_library_paths ${LWTNN_LIBRARY_DIR})
   endif(LWTNN_FOUND)
 endif(Boost_FOUND AND Eigen_FOUND)
 
-# Try to find XGBoost
-find_package(XGBoost)
-if(XGBoost_FOUND)
-  # Add directories to be included
-  set(INCLUDES ${INCLUDES} ${XGBoost_INCLUDE_DIR})
-  set(LIBS ${LIBS} ${XGBoost_LIBRARIES})
-  # Additional header and source files to be used
-  set(HEADERS ${HEADERS}
-    ${CXX_INCLUDE_DIR}/${MODULE_NAME}/XGBoostKernel.h
-  )
-  set(SRCS ${SRCS}
-      ${CXX_SOURCE_DIR}/XGBoostKernel.cxx
-  )
-  # Add LWTNN backend used in configuration setup
-  list(APPEND _backends XGBoost)
-endif(XGBoost_FOUND)
+
+# rabit
+# Required by XGBoost
+find_package(rabit)
+
+# dmlc (aka dmlc-core)
+# Required by XGBoost
+find_package(dmlc)
+
+if(rabit_FOUND AND dmlc_FOUND)
+  # Try to find XGBoost
+  find_package(XGBoost)
+  if(XGBoost_FOUND)
+    # Add directories to be included
+    set(INCLUDES ${INCLUDES} ${XGBoost_INCLUDE_DIR} ${rabit_INCLUDE_DIR}
+                             ${dmlc_INCLUDE_CIR})
+    set(LIBS ${LIBS} ${XGBoost_LIBRARIES} ${rabit_LIBRARIES}
+                             ${dmlc_LIBRARIES})
+    # Additional header and source files to be used
+    set(HEADERS ${HEADERS}
+      ${CXX_INCLUDE_DIR}/${MODULE_NAME}/XGBoostKernel.h
+    )
+    set(SRCS ${SRCS}
+        ${CXX_SOURCE_DIR}/XGBoostKernel.cxx
+    )
+    # Add LWTNN backend used in configuration setup
+    list(APPEND _backends XGBoost)
+
+    # Add library paths to setup
+    list(APPEND _configure_static_library_paths ${rabit_LIBRARY_DIR}
+                                                ${dmlc_LIBRARY_DIR})
+    list(APPEND _configure_shared_library_paths ${XGBoost_LIBRARY_DIR})
+  endif(XGBoost_FOUND)
+endif(rabit_FOUND AND dmlc_FOUND)
 
 
 if(NOT _backends)

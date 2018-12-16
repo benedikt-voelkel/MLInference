@@ -10,7 +10,7 @@ namespace mlinference {
   /// Specify the type of the ML algorithm
   enum class EMLType {kNN, kBDT, kSVM, kUnknown};
   /// Specify the backend
-  enum class EMLBackend {kLWTNN, kUnknown};
+  enum class EMLBackend {kLWTNN, kXGBoost, kUnknown};
 
   typedef std::unordered_map<std::string, double> Predictions;
   typedef Predictions Inputs;

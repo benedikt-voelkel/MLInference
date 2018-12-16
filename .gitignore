@@ -1,0 +1,36 @@
+# object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# dynamic libraries
+*.so
+*.dylib
+*.dll
+
+
+# Fortran module files
+*.mod
+
+# static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# executables
+*.exe
+*.out
+*.app
+
+# editor backups/cached
+*.swp
+*~
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
+compile_commands.json

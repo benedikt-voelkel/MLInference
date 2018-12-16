@@ -43,8 +43,6 @@ namespace mlinference {
       private:
         /// Full path to model file
         std::string mmodelPath;
-        /// Model handle of treelite
-        ModelHandle mModel;
         /// Pointer to global inputs
         Inputs* mInputs;
         /// Pointer to global predictions

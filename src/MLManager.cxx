@@ -59,6 +59,21 @@ void MLManager::initialize()
   changeState(EState::kPostInit);
 }
 
+void MLManager::reset()
+{
+  for(auto& k : mKernels) {
+    if(k) {
+      delete k;
+    }
+  }
+  mKernels.clear();
+  mInputs.clear();
+  mPredictions.clear();
+  mWorkingPoints.clear();
+  mDecisions.clear();
+  mCurrentState = EState::kPreInit;
+}
+
 const std::vector<std::string>& MLManager::getFeatureNames() const
 {
   return mFeatureNames;

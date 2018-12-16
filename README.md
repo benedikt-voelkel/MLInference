@@ -1,22 +1,39 @@
 # C++ ML inference
 This repository is work in progress. The goal is a general wrapper to apply trained ML algorithms in a C++ environment. The training is supposed to be completely independent of the inference. So far the only backend supported [LWTNN](https://github.com/lwtnn/lwtnn) which is able to rebuild NNs trained in Keras.
 
-## Requirements
-* [CMake](https://cmake.org/) in order to install this project
-* [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) (required by LWTNN, see link below for further info)
-* [Boost](https://www.boost.org/) (its property-tree is required by LWTNN, see link below for further info)
-* [LWTNN](https://github.com/lwtnn/lwtnn)
+## Dependencies and requirements
+
+### Build requirements
+
+This package is built via [CMake](https://cmake.org/) with minimum version `3.5.0`. Furthermore, a GCC toolchain with CXX11 support is required.
+
+### Optional dependencies
+
+The core of this package has no dependencies at all. However, in that case it is built without any supported backend and hence cannot be deployed immediately. This mode can be used in case a user wants to implement a backend from scratch using the `MLManager` as the steering instance. Instruction of how to implement a backend can be find [below](## Adding a custom backend).
+
+Currently supported backends built in are [LWTNN](https://github.com/lwtnn/lwtnn) (tested with version v2.7.1) and [XGBoost](https://xgboost.readthedocs.io/en/latest/index.html) (tested with version v0.81). These have themselves a few dependencies which are
+
+* `LWTNN`
+  * [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) (tested with version 3.3.5)
+  * [Boost](https://www.boost.org/) (actually only its property-tree is required, tested with version v1.68.0)
+
+* `XGBoost` The easiest way is to go for `git clone --recursive https://github.com/dmlc/xgboost` which recursively clones the dependencies `dmlc` (aka `dmlc-core`) and `rabit`. Afterwards, just follow these [instructions](https://xgboost.readthedocs.io/en/latest/build.html#building-the-shared-library) to build the shared library. That is an in-source built which implies building libraries of `dmlc` and `rabit` as well. If you wish you can of course build everything separately.
 
 ## Installation
 This is installed using CMake according to
 ```bash
 mkdir $BUILD_DIR; cd $BUILD_DIR
-cmake [-DCMAKE_INSTALL_PREFIX=$INSTALL_DIR] -DEIGEN_DIR=<top-Eigen-install-dir> \
-                                            -DLWTNN_DIR=<top-LWTNN-install-dir> \
-                                            [-DBOOST_ROOT=<top-LWTNN-install-dir>]
+cmake [-DCMAKE_INSTALL_PREFIX=$INSTALL_DIR] [-DEigen_DIR=<top-Eigen-install-dir>] \
+                                            [-DLWTNN_DIR=<top-LWTNN-install-dir>] \
+                                            [-DBOOST_DIR=<top-Boost-install-dir>] \
+                                            [-Ddmlc_DIR=<top-dmlc-install-dir>] \
+                                            [-Drabit_DIR=<top-rabit-install-dir>] \
+                                            [-DXGBoost_DIR=<top-XGBoost-install-dir>] \
+                                            $SOURCE_DIR
 make install
 ```
-Set `BOOST_ROOT` in case you have `Boost` installed to a custom path. Although you could try an in-source build (not tested) this is not recommended (especially to not mess up the source directory). So let's suggest you have it installed to `$INSTALL_DIR` in the following where after installation there are libraries and headers.
+The backends are only installed if their respective dependencies are found. You will be informed by the output of `CMake` what is going to be built.
+Set `BOOST_DIR` if you have `Boost` installed to a custom path. An in-source built has not been not tested and it is not recommended (especially to not mess up the source directory). So let's assume in the following the installation went to `$INSTALL_DIR`.
 
 ## Usage
 As this package deals with inference of a trained ML algorithm, there is no training involved at all. The interface between the training and this package is a configuration file providing the architecture and the parameter values of the trained algorithm.
@@ -33,56 +50,10 @@ func_model = seq_model.model
  The default for the saved model is `model.json`.
 
 ### Loading the model
-The core is the `MLManager` which is used to create ML kernels providing a unified interface to talk to them at the same time. A basic implementation could look like the following:
-```c++
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include <iostream>
+The core is the `MLManager` which is used to create ML kernels providing a unified interface to talk to them at the same time. Look into the [test directory](test) to get an idea about the basic usage of the `MLManager` as well as together with backends.
 
-#include "MLInference/Types.h"
-#include "MLInference/MLManager.h"
-//...
-int main(int argc, char* argv[])
-{
-  //...
-  // Get reference to the global manager
-  mlinference::base::MLManager& mgr = mlinference::base::MLManager::getInstance();
-  const std::vector<std::string> featureNames = {"feature_1", "feature_2", "feature_N"};
-  // configure it
-  mgr.configure(featureNames);
-  // For LWTNN we need some mapping of internally used feature names "variable_i" to global common feature names (can be ommitted)
-  const std::unordered_map<std::string, std::string> featureNamesToLWTNNMap = { {"variable_0": "feature_1"}, {"variable_1": "feature_2"}, {"variable_N-1", "feature_N"} };
-  // Add a kernel (so far only LWTNN is available)
-  unsigned int kernelID = mgr.createKernel<mlinference::lwtnn::MLKernel>(modelJsonFilepath, featureNamesToLWTNNMap);
-  // Initialize the MLManager will lock such that no more MLKernels can be added
-  mgr.initialize();
-  // Connect to inputs via reference
-  mlinference::Inputs& inputs = mgr.getInputsRef();
+[WIP] Document in Wiki.
 
-  //
-  // In the following you would loop over your samples deriving a prediction for each one
-  //
+## Adding a custom backend
 
-  // Set features
-  inputs["feature_1"] = 5.;
-  //...
-  inputs["feature_N"] = 42.;
-  // compute predictions
-  mgr.compute();
-  // get the predictions
-  const Predictions& predictions = mgr.getPredictions(kernelID);
-  // do whatever
-  for(const auto& p : predictions) {
-    std::cout << "Prediction " << p.first << " is " << p.second << "\n";
-  }
-
-  //
-  // End looping over samples
-  //
-
-  //...
-
-  return 0;
-}
-```
+[WIP] Instruction of how to implement a custom backend.

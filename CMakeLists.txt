@@ -8,6 +8,10 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.5.0 FATAL_ERROR)
 
 project(${MODULE_NAME})
 
+# Include for building tests, this generates option BUILD_TESTING which is ON
+# by default
+include(CTest)
+
 ################################################################################
 # Extend module file path
 ################################################################################
@@ -15,7 +19,6 @@ set(CMAKE_MODULE_PATH
     ${CMAKE_SOURCE_DIR}/cmake
     ${CMAKE_MODULE_PATH}
 )
-
 
 ################################################################################
 # Basic configurations
@@ -31,14 +34,15 @@ set(INSTALL_LIBRARY_DIR ${CMAKE_INSTALL_PREFIX}/lib)
 set(INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/include/${MODULE_NAME})
 set(INSTALL_SCRIPTS_DIR ${CMAKE_INSTALL_PREFIX}/scripts)
 set(INSTALL_CONFIG_DIR ${CMAKE_INSTALL_PREFIX}/config)
-
+# Collect for configure script
+set(_configure_shared_library_paths)
+set(_configure_static_library_paths)
 
 ################################################################################
 # Some options to decide about backend installation
 ################################################################################
 option(WITH_LWTNN "Build with LWTNN backend" ON)
 option(WITH_XGBoost "Build with XGBoost backend" ON)
-
 
 ################################################################################
 # Compiler and linker flags
@@ -85,7 +89,7 @@ include_directories(${CXX_INCLUDE_DIR} ${INCLUDES})
 set(LIBRARY_NAME ${MODULE_NAME})
 add_library(${LIBRARY_NAME} SHARED ${SRCS})
 target_link_libraries(${LIBRARY_NAME} ${LIBS})
-
+list(APPEND _configure_shared_library_paths ${INSTALL_LIBRARY_DIR})
 
 ################################################################################
 # Configure the setup config script
@@ -95,7 +99,14 @@ set(SETUP_SCRIPT_IN ${CONFIG_SOURCE_DIR}/setup.in)
 set(SETUP_SCRIPT_OUT ${CMAKE_BINARY_DIR}/setup)
 include(BuildSetup)
 
-
+################################################################################
+# Build tests
+################################################################################
+if(NOT BUILD_TESTING)
+  message(WARNING "No tests are built.")
+else()
+  add_subdirectory(test)
+endif(NOT BUILD_TESTS)
 
 ################################################################################
 # Install the project

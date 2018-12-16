@@ -67,6 +67,9 @@ namespace mlinference {
         /// Initialize all MLKernels passing input and output container pointers
         void initialize();
 
+        /// Reset the MLManager and all its backends
+        void reset();
+
         /// Get feature names, can be useful if they were set from a JSON
         const std::vector<std::string>& getFeatureNames() const;
 

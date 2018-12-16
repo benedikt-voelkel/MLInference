@@ -7,20 +7,13 @@ mlinference_inc_dir=@mlinference_inc_dir@
 mlinference_lib_dir=@mlinference_lib_dir@
 mlinference_scripts_dir=@mlinference_scripts_dir@
 
+shared_lib_paths=@shared_lib_paths@
+static_lib_paths=@static_lib_paths@
+
 if [[ "$ML_INF_SETUP" != "1" ]] ; then
   # Extend LD_LIBRARY_PATH
-  #export LD_LIBRARY_PATH=$lwtnn_lib_dir:$mlinference_lib_dir:$LD_LIBRARY_PATH
-  #export DYLD_LIBRARY_PATH=$lwtnn_lib_dir:$mlinference_lib_dir:$DYLD_LIBRARY_PATH
-  # Extend PATH
-  #export PATH=$PATH:$lwtnn_bin_dir:$mlinference_scripts_dir
-  # Export top level dirs to packages (ROOT has already exported everything)
-  #export EIGEN3_INCLUDE_DIR=$eigen3_inc_dir
-  #export BOOST_INCLUDE_DIR=$boost_inc_dir
-  #export BOOST_LIBRARY_DIR=$boost_lib_dir
-  #export LWTNN_INCLUDE_DIR=$lwtnn_inc_dir
-  #export LWTNN_LIBRARY_DIR=$lwtnn_lib_dir
-  #export LWTNN_BINARY_DIR=$lwtnn_bin_dir
-  #export LWTNN_CONVERTER_DIR=$lwtnn_converter_dir
-
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$shared_lib_paths
+  # Extend LIBRARY_PATH
+  export LIBRARY_PATH=$LIBRARY_PATH:$static_lib_paths
   export ML_INF_SETUP="1"
 fi

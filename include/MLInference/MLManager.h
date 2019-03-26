@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <string>
 #include <iostream>
+#include <memory> //std::unique_ptr
 
 #include "MLInference/Types.h"
 #include "MLInference/MLKernel.h"
@@ -45,7 +46,7 @@ namespace mlinference {
         MLManager(const MLManager&) = delete;
         MLManager& operator=(const MLManager&) = delete;
 
-        ~MLManager();
+        ~MLManager() = default;
 
         /// Create a MLKernel by providing arguments which will be forwarded to
         /// the respective kernel construction
@@ -54,7 +55,7 @@ namespace mlinference {
         createKernel(TArg&&... Args)
         {
           assertState(EState::kInit);
-          mKernels.push_back(new T(mKernels.size(), std::forward<TArg>(Args)...));
+          mKernels.emplace_back(new T(mKernels.size(), std::forward<TArg>(Args)...));
           return mKernels.size() - 1;
         }
 
@@ -78,22 +79,11 @@ namespace mlinference {
         /// Get a reference to inputs read only
         const Inputs& getInputs() const;
 
-        /// Get reference to woking points to set them
-        PredictionsVec& getWorkingPoints();
-        /// Get reference to woking points read only
-        const PredictionsVec& getWorkingPoints() const;
-
         /// Compute the predictions
         void compute();
 
         /// Get predictions from all algorithms ordered by ID
-        const PredictionsVec& getPredictions() const;
-
-        /// Get the decision based on user defined working points
-        /// 0: prediction < WP
-        /// 1: prediction >= WP
-        /// Default WP = 0.5
-        const PredictionsVec& getDecisions();
+        const Predictions& getPredictions(unsigned int kernelId) const;
 
         /// Get number of kernels
         unsigned int nKernels() const;
@@ -108,24 +98,22 @@ namespace mlinference {
         /// Change the current state
         void changeState(EState state);
 
+        /// Check whether kernel with kernelId exists
+        bool hasKernel(unsigned int kernelId) const;
+
       private:
         /// Hold all instanciated ML inferers
-        std::vector<MLKernel*> mKernels;
+        std::vector<std::unique_ptr<MLKernel>> mKernels;
         /// The feature names
         std::vector<std::string> mFeatureNames;
         /// All inputs
         Inputs mInputs;
         /// Summing up all predictions
-        PredictionsVec mPredictions;
-        /// Working points for all output neurons of all MLKernels
-        PredictionsVec mWorkingPoints;
-        /// Decisions made based on predictions of working points
-        PredictionsVec mDecisions;
+        std::vector<std::unique_ptr<Predictions>> mPredictions;
         /// The current state
         EState mCurrentState = EState::kPreInit;
     };
   } // end namespace base
-
 } // end namespace cppmlinference
 
 #endif /* ML_MANAGER_H_ */

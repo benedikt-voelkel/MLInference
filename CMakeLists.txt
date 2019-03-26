@@ -106,7 +106,7 @@ if(NOT BUILD_TESTING)
   message(WARNING "No tests are built.")
 else()
   add_subdirectory(test)
-endif(NOT BUILD_TESTS)
+endif(NOT BUILD_TESTING)
 
 ################################################################################
 # Install the project

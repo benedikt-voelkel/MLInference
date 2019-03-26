@@ -6,15 +6,6 @@
 using namespace mlinference;
 using namespace mlinference::base;
 
-MLManager::~MLManager()
-{
-  for(auto& k : mKernels) {
-    if(k) {
-      delete k;
-    }
-  }
-}
-
 void MLManager::configure(const std::vector<std::string>& featureNames)
 {
   assertState(EState::kPreInit);
@@ -42,35 +33,21 @@ void MLManager::initialize()
   }
 
   // One prediction container for each MLKernel and initialize
-  mPredictions.resize(mKernels.size(), Predictions());
+  mPredictions.resize(mKernels.size());
   // One decision container for each MLKernel and initialize together with
   // a decision container
-  mWorkingPoints.resize(mKernels.size(), Predictions());
-  mDecisions.resize(mKernels.size(), Predictions());
   for(int i = 0; i < mKernels.size(); i++) {
-    mKernels[i]->initialize(&mInputs, &(mPredictions[i]));
-    // Initialize decision map for this MLKernel
-    for(auto& p : mPredictions[i]) {
-      // Default WP is 0.5. User needs/can specify values later via getting
-      mWorkingPoints[i][p.first] = 0.5;
-      mDecisions[i][p.first] = 0.;
-    }
+    mPredictions[i].reset(new Predictions());
+    mKernels[i]->initialize(&mInputs, mPredictions[i].get());
   }
   changeState(EState::kPostInit);
 }
 
 void MLManager::reset()
 {
-  for(auto& k : mKernels) {
-    if(k) {
-      delete k;
-    }
-  }
   mKernels.clear();
   mInputs.clear();
   mPredictions.clear();
-  mWorkingPoints.clear();
-  mDecisions.clear();
   mCurrentState = EState::kPreInit;
 }
 
@@ -89,16 +66,6 @@ const Inputs& MLManager::getInputs() const
   return mInputs;
 }
 
-PredictionsVec& MLManager::getWorkingPoints()
-{
-  return mWorkingPoints;
-}
-
-const PredictionsVec& MLManager::getWorkingPoints() const
-{
-  return mWorkingPoints;
-}
-
 void MLManager::compute()
 {
   for(auto& k : mKernels) {
@@ -106,22 +73,13 @@ void MLManager::compute()
   }
 }
 
-const PredictionsVec& MLManager::getPredictions() const
+const Predictions& MLManager::getPredictions(unsigned int kernelId) const
 {
-  return mPredictions;
-}
-
-const PredictionsVec& MLManager::getDecisions()
-{
-  // Decisions are not computed on the fly together with the predictions but
-  // only on request.
-  for(unsigned int i = 0; i < mPredictions.size(); i++) {
-    for(const auto& p : mPredictions[i]) {
-      // Return 1. if prediction is >= working point and 0. otherwise
-      mDecisions[i][p.first] = p.second >= mWorkingPoints[i][p.first] ? 1. : 0.;
-    }
+  if(!hasKernel(kernelId)) {
+    std::cerr << "ERROR: Kernel ID " << kernelId << "unknown, exit.\n";
+    exit(1);
   }
-  return mDecisions;
+  return *mPredictions[kernelId];
 }
 
 unsigned int MLManager::nKernels() const
@@ -140,4 +98,13 @@ void MLManager::assertState(EState state) const
 void MLManager::changeState(EState state)
 {
   mCurrentState = state;
+}
+
+
+bool MLManager::hasKernel(unsigned int kernelId) const
+{
+  if(kernelId >= mKernels.size()) {
+    return false;
+  }
+  return true;
 }

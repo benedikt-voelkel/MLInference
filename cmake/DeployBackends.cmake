@@ -13,7 +13,7 @@ find_package(Boost)
 # Requried for LWTNN
 find_package(Eigen)
 
-if(Boost_FOUND AND Eigen_FOUND)
+if(Boost_FOUND AND Eigen3_FOUND)
   find_package(LWTNN)
   if(LWTNN_FOUND)
     # Add directories to be included
@@ -37,7 +37,7 @@ if(Boost_FOUND AND Eigen_FOUND)
     # Add library paths to setup
     list(APPEND _configure_shared_library_paths ${LWTNN_LIBRARY_DIR})
   endif(LWTNN_FOUND)
-endif(Boost_FOUND AND Eigen_FOUND)
+endif(Boost_FOUND AND Eigen3_FOUND)
 
 
 # rabit
